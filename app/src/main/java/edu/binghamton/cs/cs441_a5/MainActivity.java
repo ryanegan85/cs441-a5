@@ -15,10 +15,18 @@ import android.widget.TextView;
 
 import org.w3c.dom.Text;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
 
+    private static final String FILE_NAME = "data.txt";
     private RecyclerView recyclerView;
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager layoutManager;
@@ -28,14 +36,27 @@ public class MainActivity extends AppCompatActivity {
     private TextView runningTotalText;
     private ArrayList<Integer> numbers;
     private int runningTotal;
+    TinyDB tinyDB;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        tinyDB = new TinyDB(this);
+
         numbers = new ArrayList<>();
+        numbers = tinyDB.getListInt("Numbers");
+
+        runningTotalText = findViewById(R.id.runningTotal);
         runningTotal = 0;
+
+        if(numbers.size() > 0) {
+            for (int i = 0; i < numbers.size(); i++) {
+                runningTotal += numbers.get(i);
+            }
+            runningTotalText.setText("Running Total: " + runningTotal);
+        }
 
         recyclerView = (RecyclerView) findViewById(R.id.myRecyclerView);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -44,7 +65,7 @@ public class MainActivity extends AppCompatActivity {
         new ItemTouchHelper(itemTouchHelperCallback).attachToRecyclerView(recyclerView);
 
         editNumber = findViewById(R.id.numberEdit);
-        runningTotalText = findViewById(R.id.runningTotal);
+
         addButton = findViewById(R.id.addButton);
         addButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -61,6 +82,9 @@ public class MainActivity extends AppCompatActivity {
                         runningTotalText.setText("Running Total: " + runningTotal);
 
                         mAdapter.notifyDataSetChanged();
+                        editNumber.getText().clear();
+
+                        tinyDB.putListInt("Numbers", numbers);
                     } catch(NumberFormatException e) {
                         System.out.println("Error converting input to integer");
                     }
@@ -77,6 +101,7 @@ public class MainActivity extends AppCompatActivity {
 
                 runningTotal = 0;
                 runningTotalText.setText("Running Total: 0");
+                tinyDB.putListInt("Numbers", numbers);
             }
         });
     }
@@ -97,4 +122,67 @@ public class MainActivity extends AppCompatActivity {
             runningTotalText.setText("Running Total: " + runningTotal);
         }
     };
+
+    /*
+    public void save() {
+        String text;
+        FileOutputStream fos = null;
+        File f = new File(FILE_NAME);
+
+        if(f.exists()) f.delete();
+
+        try  {
+            fos = openFileOutput(FILE_NAME, MODE_PRIVATE);
+
+            for(int i=0; i<numbers.size(); i++) {
+                text = numbers.get(i) + "\n";
+                fos.write(text.getBytes());
+            }
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if(fos != null) {
+                try {
+                    fos.close();
+                } catch(IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public void load() {
+        FileInputStream fis = null;
+        File f = new File(FILE_NAME);
+
+        if(f.exists()) {
+            try {
+                fis = openFileInput(FILE_NAME);
+                InputStreamReader isr = new InputStreamReader(fis);
+                BufferedReader br = new BufferedReader(isr);
+                StringBuilder sb = new StringBuilder();
+                String line;
+
+                while ((line = br.readLine()) != null) {
+                    numbers.add(Integer.parseInt(line));
+                }
+
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    fis.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+    */
+
 }
